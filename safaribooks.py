@@ -17,6 +17,11 @@ from lxml import html, etree
 from multiprocessing import Process, Queue, Value
 from urllib.parse import urljoin, urlparse, parse_qs, quote_plus
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+#from requests.packages.urllib3.exceptions import InsecureRequestWarning
+#requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 PATH = os.path.dirname(os.path.realpath(__file__))
 COOKIES_FILE = os.path.join(PATH, "cookies.json")
@@ -614,7 +619,7 @@ class SafariBooks:
         return pathlib.Path(url).suffix[1:].lower() in ["jpg", "jpeg", "png", "gif"]
 
     def link_replace(self, link):
-        if link and not link.startswith("mailto"):
+        if link and not link.startswith("mailto") and not '_images.xhtml' in link:
             if not self.url_is_absolute(link):
                 if any(x in link for x in ["cover", "images", "graphics"]) or \
                         self.is_image_link(link):
