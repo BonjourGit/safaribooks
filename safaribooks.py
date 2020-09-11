@@ -187,12 +187,13 @@ class Display:
             self.info("{0}{1}{2}: {3}".format(self.SH_YELLOW, t[0], self.SH_DEFAULT, t[1]), True)
 
     def state(self, origin, done):
+        column_adjust = 12
         progress = int(done * 100 / origin)
-        bar = int(progress * (self.columns - 11) / 100)
+        bar = int(progress * (self.columns - column_adjust) / 100)
         if self.state_status.value < progress:
             self.state_status.value = progress
             sys.stdout.write(
-                "\r    " + self.SH_BG_YELLOW + "[" + ("#" * bar).ljust(self.columns - 11, "-") + "]" +
+                "\r    " + self.SH_BG_YELLOW + "[" + ("#" * bar).ljust(self.columns - column_adjust, "-") + "]" +
                 self.SH_DEFAULT + ("%4s" % progress) + "%" + ("\n" if progress == 100 else "")
             )
 
