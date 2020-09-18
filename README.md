@@ -46,8 +46,8 @@ Like: `https://www.safaribooksonline.com/library/view/test-driven-development-wi
 ```shell
 $ python3 safaribooks.py --help
 usage: safaribooks.py [--cred <EMAIL:PASS> | --login] [--no-cookies]
-                      [--kindle] [--preserve-log] [--help]
-                      <BOOK ID>
+                      [--kindle] [--playlist ID] [--preserve-log] [--help]
+                      <BOOK ID> <BOOK ID> ...
 
 Download and generate an EPUB of your favorite books from Safari Books Online.
 
@@ -56,6 +56,7 @@ positional arguments:
                        it in the URL (X-es):
                        `https://learning.oreilly.com/library/view/book-
                        name/XXXXXXXXXXXXX/`
+                       You can specify multiple Book IDs.
 
 optional arguments:
   --cred <EMAIL:PASS>  Credentials used to perform the auth login on Safari
@@ -68,6 +69,8 @@ optional arguments:
   --kindle             Add some CSS rules that block overflow on `table` and
                        `pre` elements. Use this option if you're going to
                        export the EPUB to E-Readers like Amazon Kindle.
+  --playlist ID        Download an entire playlist of books at once.
+                       Overrides any positional book ids provided.
   --preserve-log       Leave the `info_XXXXXXXXXXXXX.log` file even if there
                        isn't any error.
   --help               Show this help message.

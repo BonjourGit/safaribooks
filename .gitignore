@@ -6,6 +6,7 @@ __pycache__/
 .env/
 
 Books/
+Playlists/
 
 cookies.json
 *.log
