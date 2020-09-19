@@ -442,10 +442,10 @@ class SafariBooks:
     
             self.display.done(os.path.join(self.BOOK_PATH, self.book_id + ".epub"))
 
+        self.display.done("{0}".format(self.book_ids))
         self.display.unregister()
         if not self.display.in_error and not args.log:
             os.remove(self.display.log_file)
-        self.display.done("{0}".format(self.book_ids))
 
     def handle_cookie_update(self, set_cookie_headers):
         for morsel in set_cookie_headers:
