@@ -359,7 +359,8 @@ class SafariBooks:
 
         if args.playlist is not None:
             self.playlist_id = args.playlist
-            self.book_ids = self.get_playlist_books()
+            playlist_name, self.book_ids = self.get_playlist_books()
+            self.display.info("About to download playlist {0}: {1}...".format(playlist_name, self.book_ids))
 
         i = 0
         for bookid in self.book_ids:
@@ -586,7 +587,7 @@ class SafariBooks:
                for book in response.get("content",{})
                if self.get_book_id(book) is not None]
         print(ids)
-        return ids
+        return pdir, ids
 
     def get_book_id(self, book):
         if book.get("ourn"):
