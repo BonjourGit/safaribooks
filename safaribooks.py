@@ -361,10 +361,13 @@ class SafariBooks:
             self.playlist_id = args.playlist
             self.book_ids = self.get_playlist_books()
 
+        i = 0
         for bookid in self.book_ids:
             self.book_id = bookid
             self.api_url = self.API_TEMPLATE.format(self.book_id)
-    
+ 
+            i += 1
+            self.display.info("Working on book {0} [ {1} of {2} ] ...".format(bookid, i, len(self.book_ids)))
             self.display.info("Retrieving book info...")
             self.book_info = self.get_book_info()
             self.display.book_info(self.book_info)
@@ -442,6 +445,7 @@ class SafariBooks:
         self.display.unregister()
         if not self.display.in_error and not args.log:
             os.remove(self.display.log_file)
+        self.display.done("{0}".format(self.book_ids))
 
     def handle_cookie_update(self, set_cookie_headers):
         for morsel in set_cookie_headers:
