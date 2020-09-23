@@ -12,12 +12,17 @@ import argparse
 import requests
 import traceback
 import datetime
+import signal
 from requests import Request
 from html import escape
 from random import random
 from lxml import html, etree
 from multiprocessing import Process, Queue, Value
 from urllib.parse import urljoin, urlparse, parse_qs, quote_plus
+
+def sig_handler(sig, frame):
+    sys.exit(0)
+signal.signal(signal.SIGINT, sig_handler)
 
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
