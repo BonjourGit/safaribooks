@@ -437,7 +437,7 @@ class SafariBooks:
             self.display.info("Downloading book CSSs... (%s files)" % len(self.css), state=True)
             self.collect_css()
             self.images_done_queue = Queue(0) if "win" not in sys.platform else WinQueue()
-            self.display.info("Downloading book images... (%s files)" % len(self.images), state=True)
+            self.display.info("Downloading book images... (%s files, %s uniq)" % (len(self.images), len(set(self.images))), state=True)
             self.collect_images()
     
             self.display.info("Creating EPUB file...", state=True)
