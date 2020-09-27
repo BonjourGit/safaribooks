@@ -371,6 +371,7 @@ class SafariBooks:
         for bookid in self.book_ids:
             self.book_id = bookid
             self.api_url = self.API_TEMPLATE.format(self.book_id)
+            self.display.reset_output_dir()
  
             i += 1
             self.display.info("Working on book {0} [ {1} of {2} ] ...".format(bookid, i, len(self.book_ids)))
