@@ -55,8 +55,11 @@ class Display:
     )
 
     SH_DEFAULT = "\033[0m" if "win" not in sys.platform else ""  # TODO: colors for Windows
+    SH_BOLD = "\033[1m" if "win" not in sys.platform else ""
+    SH_GREEN = "\033[32m" if "win" not in sys.platform else ""
     SH_YELLOW = "\033[33m" if "win" not in sys.platform else ""
     SH_BG_RED = "\033[41m" if "win" not in sys.platform else ""
+    SH_BG_GREEN = "\033[42m" if "win" not in sys.platform else ""
     SH_BG_YELLOW = "\033[43m" if "win" not in sys.platform else ""
 
     def __init__(self, log_file):
@@ -196,6 +199,11 @@ class Display:
             ("URL", info["web_url"])
         ]:
             self.info("{0}{1}{2}: {3}".format(self.SH_YELLOW, t[0], self.SH_DEFAULT, t[1]), True)
+
+    def start(self, message):
+        self.log(message)
+        output = self.SH_BG_GREEN + "[!]" + self.SH_DEFAULT + self.SH_GREEN + self.SH_BOLD + " %s" % message + self.SH_DEFAULT
+        self.out(output)
 
     def state(self, origin, done):
         column_adjust = 12
@@ -374,7 +382,7 @@ class SafariBooks:
             self.display.reset_output_dir()
  
             i += 1
-            self.display.info("Working on book {0} [ {1} of {2} ] ...".format(bookid, i, len(self.book_ids)))
+            self.display.start("Working on book {0} [ {1} of {2} ] ...".format(bookid, i, len(self.book_ids)))
             self.display.info("Retrieving book info...")
             self.book_info = self.get_book_info()
             self.display.book_info(self.book_info)
