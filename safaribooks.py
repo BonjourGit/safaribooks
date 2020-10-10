@@ -373,6 +373,10 @@ class SafariBooks:
         if args.playlist is not None:
             self.playlist_id = args.playlist
             playlist_name, self.book_ids = self.get_playlist_books()
+            if args.bookids is not None:
+                # Overwrite book_ids with user provided book ids within the playlist
+                # Useful for downloading specific books within a playlist
+                self.book_ids = args.bookids
             self.display.info("About to download playlist {0}: {1}...".format(playlist_name, self.book_ids))
 
         i = 0
