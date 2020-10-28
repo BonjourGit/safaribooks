@@ -255,6 +255,7 @@ class SafariBooks:
 
     API_TEMPLATE = SAFARI_BASE_URL + "/api/v1/book/{0}/"
 
+    COLLECTIONS = SAFARI_BASE_URL + "/api/v2/collections/"
     COLLECTIONS_TEMPLATE = SAFARI_BASE_URL + "/api/v2/collections/{0}"
 
     BASE_01_HTML = "<!DOCTYPE html>\n" \
@@ -369,6 +370,12 @@ class SafariBooks:
                 json.dump(self.session.cookies.get_dict(), open(COOKIES_FILE, 'w'))
 
         self.check_login()
+
+        if args.getplaylists:
+            self.get_playlists()
+            if not self.display.in_error and not args.log:
+                os.remove(self.display.log_file)
+            return
 
         if args.playlist is not None:
             self.playlist_id = args.playlist
@@ -581,6 +588,23 @@ class SafariBooks:
             self.display.exit("Authentication issue: account subscription expired.")
 
         self.display.info("Successfully authenticated.", state=True)
+
+    def get_playlists(self):
+        url = self.COLLECTIONS
+        response = self.requests_provider(url)
+
+        if response == 0:
+            self.display.exit("API: unable to retrieve collections (all playlists).")
+
+        response = response.json()
+        collection = []
+        for x in range(len(response)):
+            if response[x]['is_owned'] is True:
+                #print(response[x]['id'],response[x]['name'])
+                print("Playlist:{} {}".format(response[x]['id'],response[x]['name']))
+                collection.append(response[x]['id'])
+
+        return collection
 
     def get_playlist_books(self):
         url = self.COLLECTIONS_TEMPLATE.format(self.playlist_id)
@@ -1186,6 +1210,9 @@ if __name__ == "__main__":
         "--playlist", dest="playlist",
         help="Playlist from which you want to download all books"
     )
+    arguments.add_argument(
+        "--getplaylists", dest="getplaylists", action='store_true', help="Get playlists IDs"
+    )
 
     args_parsed = arguments.parse_args()
     if args_parsed.cred or args_parsed.login:
@@ -1213,7 +1240,7 @@ if __name__ == "__main__":
         if args_parsed.no_cookies:
             arguments.error("invalid option: `--no-cookies` is valid only if you use the `--cred` option")
 
-    if not args_parsed.playlist and len(args_parsed.bookids) == 0:
+    if not args_parsed.getplaylists and not args_parsed.playlist and len(args_parsed.bookids) == 0:
         arguments.error("Either a playlist ID or at least one BOOK ID must be specified")
 
     SafariBooks(args_parsed)
