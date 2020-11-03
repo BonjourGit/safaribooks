@@ -730,11 +730,12 @@ class SafariBooks:
         return pathlib.Path(url).suffix[1:].lower() in ["jpg", "jpeg", "png", "gif"]
 
     def link_replace(self, link):
-        if link and not link.startswith("mailto") and not '_images.xhtml' in link:
+        if link and not link.startswith("mailto"):
             if not self.url_is_absolute(link):
                 if (any(x in link for x in ["cover", "images", "graphics"]) or \
                         self.is_image_link(link)) and \
-                        not '.html#' in link:
+                        not '.html' in link and \
+                        not '.xhtml' in link:
                     image = link.split("/")[-1]
                     return "Images/" + image
 
