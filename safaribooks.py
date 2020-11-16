@@ -15,10 +15,11 @@ import datetime
 import signal
 from requests import Request
 from html import escape
-from random import random
+from random import random, randint
 from lxml import html, etree
 from multiprocessing import Process, Queue, Value
 from urllib.parse import urljoin, urlparse, parse_qs, quote_plus
+from time import sleep
 
 def sig_handler(sig, frame):
     sys.exit(0)
@@ -351,6 +352,8 @@ class SafariBooks:
         self.session.headers.update(self.HEADERS)
 
         self.jwt = {}
+
+        self.html_retry_cnt = args.htmlretrycnt
 
         # Directory for download with bookids
         self.books_dir = "Books"
@@ -701,12 +704,23 @@ class SafariBooks:
         return "default_cover." + file_ext
 
     def get_html(self, url):
-        response = self.requests_provider(url)
-        if response == 0 or response.status_code != 200:
-            self.display.exit(
-                "Crawler: error trying to retrieve this page: %s (%s)\n    From: %s" %
-                (self.filename, self.chapter_title, url)
-            )
+        cnt = self.html_retry_cnt
+        while cnt > 0:
+            cnt -= 1
+            response = self.requests_provider(url)
+            if response == 0 or response.status_code != 200:
+                self.display.info(
+                    "Crawler: retrying (attempt %d) to retrieve this page: %s (%s)\n    From: %s" %
+                    ((self.html_retry_cnt - cnt),self.filename, self.chapter_title, url)
+                )
+                if cnt == 0:
+                    self.display.exit(
+                        "Crawler: error trying to retrieve this page: %s (%s)\n    From: %s" %
+                        (self.filename, self.chapter_title, url)
+                    )
+                sleep(randint(1,15))
+            else:
+                break
 
         root = None
         try:
@@ -1208,6 +1222,9 @@ if __name__ == "__main__":
     )
     arguments.add_argument(
         "--getplaylists", dest="getplaylists", action='store_true', help="Get playlists IDs"
+    )
+    arguments.add_argument(
+        "--html-retry", dest="htmlretrycnt", type=int, default=1, help="HTML retry count"
     )
 
     args_parsed = arguments.parse_args()
