@@ -413,14 +413,6 @@ class SafariBooks:
                 else:
                     break
     
-            self.display.info("Retrieving book chapters...")
-            self.book_chapters = self.get_book_chapters()
-    
-            self.chapters_queue = self.book_chapters[:]
-    
-            if len(self.book_chapters) > sys.getrecursionlimit():
-                sys.setrecursionlimit(len(self.book_chapters))
-    
             self.book_title = self.book_info["title"]
             self.base_url = self.book_info["web_url"]
     
@@ -438,6 +430,14 @@ class SafariBooks:
                 self.display.info("Book directory already exists. Skipping it. Remove the directory if you want to re-download the book.")
                 self.display.reset_output_dir()
                 continue
+
+            self.display.info("Retrieving book chapters...")
+            self.book_chapters = self.get_book_chapters()
+
+            self.chapters_queue = self.book_chapters[:]
+
+            if len(self.book_chapters) > sys.getrecursionlimit():
+                sys.setrecursionlimit(len(self.book_chapters))
 
             self.css_path = ""
             self.images_path = ""
