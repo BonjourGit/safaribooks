@@ -8,4 +8,4 @@ playlistId=`echo ${playlistInfo} | cut -d '_' -f1`
 playlistName_=`echo ${playlistInfo} | cut -d '_' -f2`
 # replace all space with underscore for playlist name
 playlistName=${playlistName_// /_}
-echo "nohup ./safaribooks.py --playlist ${playlistId} >> logbook.${playlistName} 2>&1"
+echo "nohup ./safaribooks.py --book-info-retry 10 --html-retry 10 --playlist ${playlistId} >> logbook.${playlistName} 2>&1"

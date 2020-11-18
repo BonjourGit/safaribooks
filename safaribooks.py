@@ -354,6 +354,7 @@ class SafariBooks:
         self.jwt = {}
 
         self.html_retry_cnt = args.htmlretrycnt
+        self.get_book_info_retry_cnt = args.bookinforetrycnt
 
         # Directory for download with bookids
         self.books_dir = "Books"
@@ -398,8 +399,19 @@ class SafariBooks:
             i += 1
             self.display.start("Working on book {0} [ {1} of {2} ] ...".format(bookid, i, len(self.book_ids)))
             self.display.info("Retrieving book info...")
-            self.book_info = self.get_book_info()
-            self.display.book_info(self.book_info)
+            getbookinfocnt = self.get_book_info_retry_cnt
+            while getbookinfocnt > 0:
+                try:
+                    self.book_info = self.get_book_info()
+                    self.display.book_info(self.book_info)
+                except (KeyError):
+                    getbookinfocnt -= 1
+                    if getbookinfocnt == 0:
+                        self.display.exit("Unable to retrieve book info.")
+                    self.display.info("Reattempt {} retrieving book info ...".format(self.get_book_info_retry_cnt - getbookinfocnt))
+                    sleep(randint(1,5))
+                else:
+                    break
     
             self.display.info("Retrieving book chapters...")
             self.book_chapters = self.get_book_chapters()
@@ -1225,6 +1237,9 @@ if __name__ == "__main__":
     )
     arguments.add_argument(
         "--html-retry", dest="htmlretrycnt", type=int, default=1, help="HTML retry count"
+    )
+    arguments.add_argument(
+        "--book-info-retry", dest="bookinforetrycnt", type=int, default=1, help="Get book info retry count"
     )
 
     args_parsed = arguments.parse_args()
