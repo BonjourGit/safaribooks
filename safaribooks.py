@@ -13,6 +13,7 @@ import requests
 import traceback
 import datetime
 import signal
+import collections
 from requests import Request
 from html import escape
 from random import random, randint
@@ -384,6 +385,11 @@ class SafariBooks:
         if args.playlist is not None:
             self.playlist_id = args.playlist
             playlist_name, self.book_ids = self.get_playlist_books()
+            if args.verify:
+                self.verify_playlist_vs_local(playlist_name, self.book_ids)
+                if not self.display.in_error and not args.log:
+                    os.remove(self.display.log_file)
+                return
             if len(args.bookids) > 0:
                 # Overwrite book_ids with user provided book ids within the playlist
                 # Useful for downloading specific books within a playlist
@@ -404,7 +410,8 @@ class SafariBooks:
                 try:
                     self.book_info = self.get_book_info()
                     self.display.book_info(self.book_info)
-                except (KeyError):
+                except (KeyError) as e:
+                    self.display.info("Exception {}".format(e))
                     getbookinfocnt -= 1
                     if getbookinfocnt == 0:
                         self.display.exit("Unable to retrieve book info.")
@@ -645,6 +652,82 @@ class SafariBooks:
                if self.get_book_id(book) is not None]
         print(ids)
         return pdir, ids
+
+    def verify_playlist_vs_local(self, playlist_name, book_ids):
+        # Verify if a playlist book exists in local repository
+        # 1. if the directory exists
+        # 2. if the <bookid>.epub file exists
+        books_dir = os.path.join(PATH, self.books_dir)
+        if not os.path.isdir(books_dir):
+            self.display.exit("Error. Verification failed. Playlist {} directory does not exist.".format(books_dir))
+
+        info = {}
+        verified = 0
+        not_verified = 0
+        i = 0
+        for bookid in book_ids:
+            self.book_id = bookid
+            self.api_url = self.API_TEMPLATE.format(self.book_id)
+            self.display.reset_output_dir()
+
+            i += 1
+            self.display.start("Verifying book {0} [ {1} of {2} ] ...".format(bookid, i, len(self.book_ids)))
+            self.display.info("Retrieving book info...")
+            getbookinfocnt = self.get_book_info_retry_cnt
+            while getbookinfocnt > 0:
+                try:
+                    self.book_info = self.get_book_info()
+                    self.display.book_info(self.book_info)
+                except (KeyError) as e:
+                    self.display.info("Exception {}".format(e))
+                    getbookinfocnt -= 1
+                    if getbookinfocnt == 0:
+                        self.display.exit("Unable to retrieve book info.")
+                    self.display.info("Reattempt {} retrieving book info ...".format(self.get_book_info_retry_cnt - getbookinfocnt))
+                    sleep(randint(1,5))
+                else:
+                    break
+
+            self.book_title = self.book_info["title"]
+            self.base_url = self.book_info["web_url"]
+
+            self.clean_book_title = "".join(self.escape_dirname(self.book_title).split(",")[:2]) \
+                                    + " ({0})".format(self.book_id)
+
+            self.BOOK_PATH = os.path.join(books_dir, self.clean_book_title)
+            self.display.set_output_dir(self.BOOK_PATH)
+            if os.path.isdir(self.BOOK_PATH):
+                if os.path.isfile(os.path.join(self.BOOK_PATH, self.book_id + ".epub")):
+                    verified += 1
+                    info[self.clean_book_title] = True
+                else:
+                    not_verified += 1
+                    info[self.clean_book_title] = False
+            else:
+                not_verified += 1
+                info[self.clean_book_title] = False
+
+        oinfo = collections.OrderedDict(sorted(info.items(), key=lambda x: x[0].lower()))
+
+        self.display.info("")
+        self.display.info("")
+        self.display.info("=============== Playlist Verification Result ===============")
+
+        output = ''
+        for k, v in oinfo.items():
+            if v is True:
+                output = "%s: " % k + self.display.SH_BG_GREEN + self.display.SH_BOLD + "Pass" + self.display.SH_DEFAULT
+            else:
+                output = "%s: " % k + self.display.SH_BG_RED + self.display.SH_BOLD + "Fail" + self.display.SH_DEFAULT
+            self.display.out(output)
+
+        self.display.info("============================================================")
+        self.display.info("Playlist {}: Total {}, Pass {}, Fail {}".format(playlist_name, len(self.book_ids), verified, not_verified))
+        if not_verified == 0:
+            output = self.display.SH_BG_GREEN + self.display.SH_BOLD + "Verification Passed" + self.display.SH_DEFAULT 
+        else:
+            output = self.display.SH_BG_RED + self.display.SH_BOLD + "Verification Failed" + self.display.SH_DEFAULT 
+        self.display.out(output)
 
     def get_book_id(self, book):
         if book.get("ourn"):
@@ -1022,10 +1105,17 @@ class SafariBooks:
                 self.display.images_ad_info.value = 1
 
         else:
-            response = self.requests_provider(urljoin(SAFARI_BASE_URL, url), stream=True)
-            if response == 0:
-                self.display.error("Error trying to retrieve this image: %s\n    From: %s" % (image_name, url))
-                return
+            cnt = self.html_retry_cnt
+            while cnt > 0:
+                cnt -= 1
+                response = self.requests_provider(urljoin(SAFARI_BASE_URL, url), stream=True)
+                if response == 0:
+                    self.display.error("Error trying to retrieve this image: %s\n    From: %s. Retrying (attempt %d)" % (image_name, url, (self.html_retry_cnt - cnt)))
+                    if cnt == 0:
+                        self.display.exit("Error trying to retrieve this image: %s\n    From: %s" % (image_name, url))
+                    sleep(randint(1,15))
+                else:
+                    break
 
             with open(image_path, 'wb') as img:
                 for chunk in response.iter_content(1024):
@@ -1234,6 +1324,9 @@ if __name__ == "__main__":
     )
     arguments.add_argument(
         "--getplaylists", dest="getplaylists", action='store_true', help="Get playlists IDs"
+    )
+    arguments.add_argument(
+        "--verify", dest="verify", action='store_true', help="Verify playlist vs local storage"
     )
     arguments.add_argument(
         "--html-retry", dest="htmlretrycnt", type=int, default=1, help="HTML retry count"
