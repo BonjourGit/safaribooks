@@ -714,11 +714,13 @@ class SafariBooks:
         self.display.info("=============== Playlist Verification Result ===============")
 
         output = ''
+        cnt = 0
         for k, v in oinfo.items():
+            cnt += 1
             if v is True:
-                output = "%s: " % k + self.display.SH_BG_GREEN + self.display.SH_BOLD + "Pass" + self.display.SH_DEFAULT
+                output = "%d. " % cnt +"%s: " % k + self.display.SH_BG_GREEN + self.display.SH_BOLD + "Pass" + self.display.SH_DEFAULT
             else:
-                output = "%s: " % k + self.display.SH_BG_RED + self.display.SH_BOLD + "Fail" + self.display.SH_DEFAULT
+                output = "%d. " % cnt + "%s: " % k + self.display.SH_BG_RED + self.display.SH_BOLD + "Fail" + self.display.SH_DEFAULT
             self.display.out(output)
 
         self.display.info("============================================================")
