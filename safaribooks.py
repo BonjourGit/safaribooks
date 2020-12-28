@@ -89,8 +89,9 @@ class Display:
         self.state_status = Value("i", 0)
         sys.excepthook = self.unhandled_exception
 
-    def set_output_dir(self, output_dir):
-        self.info("Output directory:\n    %s" % output_dir)
+    def set_output_dir(self, output_dir, verbose=True):
+        if verbose:
+            self.info("Output directory:\n    %s" % output_dir)
         self.output_dir = output_dir
         self.output_dir_set = True
 
@@ -356,6 +357,7 @@ class SafariBooks:
 
         self.html_retry_cnt = args.htmlretrycnt
         self.get_book_info_retry_cnt = args.bookinforetrycnt
+        self.verbose = args.verbose
 
         # Directory for download with bookids
         self.books_dir = "Books"
@@ -650,18 +652,25 @@ class SafariBooks:
         ids = [self.get_book_id(book)
                for book in response.get("content",{})
                if self.get_book_id(book) is not None]
-        print(ids)
+        # print(ids)
         return pdir, ids
+
+    def get_epub_creation_time(self, book_path):
+        file_stat = pathlib.Path(book_path)
+        create_date = datetime.date.fromtimestamp(file_stat.stat().st_ctime)
+        return str(create_date)
 
     def verify_playlist_vs_local(self, playlist_name, book_ids):
         # Verify if a playlist book exists in local repository
         # 1. if the directory exists
         # 2. if the <bookid>.epub file exists
+        self.display.start("Verifying playlist \"{}\"...".format(playlist_name))
         books_dir = os.path.join(PATH, self.books_dir)
         if not os.path.isdir(books_dir):
             self.display.exit("Error. Verification failed. Playlist {} directory does not exist.".format(books_dir))
 
         info = {}
+        reason = {}
         verified = 0
         not_verified = 0
         i = 0
@@ -671,19 +680,21 @@ class SafariBooks:
             self.display.reset_output_dir()
 
             i += 1
-            self.display.start("Verifying book {0} [ {1} of {2} ] ...".format(bookid, i, len(self.book_ids)))
-            self.display.info("Retrieving book info...")
+            if self.verbose:
+                self.display.start("Verifying book {0} [ {1} of {2} ] ...".format(bookid, i, len(self.book_ids)))
+                self.display.info("Retrieving book info...")
             getbookinfocnt = self.get_book_info_retry_cnt
             while getbookinfocnt > 0:
                 try:
                     self.book_info = self.get_book_info()
-                    self.display.book_info(self.book_info)
+                    if self.verbose:
+                        self.display.book_info(self.book_info)
                 except (KeyError) as e:
                     self.display.info("Exception {}".format(e))
                     getbookinfocnt -= 1
                     if getbookinfocnt == 0:
-                        self.display.exit("Unable to retrieve book info.")
-                    self.display.info("Reattempt {} retrieving book info ...".format(self.get_book_info_retry_cnt - getbookinfocnt))
+                        self.display.exit("Unable to retrieve {} book info.".format(self.book_id))
+                    self.display.info("Reattempt {} retrieving {} book info ...".format(self.get_book_info_retry_cnt - getbookinfocnt, self.book_id))
                     sleep(randint(1,5))
                 else:
                     break
@@ -695,17 +706,26 @@ class SafariBooks:
                                     + " ({0})".format(self.book_id)
 
             self.BOOK_PATH = os.path.join(books_dir, self.clean_book_title)
-            self.display.set_output_dir(self.BOOK_PATH)
+            self.display.set_output_dir(self.BOOK_PATH, self.verbose)
             if os.path.isdir(self.BOOK_PATH):
-                if os.path.isfile(os.path.join(self.BOOK_PATH, self.book_id + ".epub")):
-                    verified += 1
-                    info[self.clean_book_title] = True
+                epub = os.path.join(self.BOOK_PATH, self.book_id + ".epub")
+                if os.path.isfile(epub):
+                    epub_ctime = self.get_epub_creation_time(epub)
+                    if epub_ctime > self.book_info["issued"]:
+                        verified += 1
+                        info[self.clean_book_title] = True
+                    else:
+                        not_verified += 1
+                        info[self.clean_book_title] = False
+                        reason[self.clean_book_title] = "{} Local copy {} is behind Issue date {}".format(self.book_id, epub_ctime, self.book_info["issued"])
                 else:
                     not_verified += 1
                     info[self.clean_book_title] = False
+                    reason[self.clean_book_title] = "Output epub file does not exist"
             else:
                 not_verified += 1
                 info[self.clean_book_title] = False
+                reason[self.clean_book_title] = "Output directory does not exist"
 
         oinfo = collections.OrderedDict(sorted(info.items(), key=lambda x: x[0].lower()))
 
@@ -720,7 +740,7 @@ class SafariBooks:
             if v is True:
                 output = "%d. " % cnt +"%s: " % k + self.display.SH_BG_GREEN + self.display.SH_BOLD + "Pass" + self.display.SH_DEFAULT
             else:
-                output = "%d. " % cnt + "%s: " % k + self.display.SH_BG_RED + self.display.SH_BOLD + "Fail" + self.display.SH_DEFAULT
+                output = "%d. " % cnt + "%s: " % k + self.display.SH_BG_RED + self.display.SH_BOLD + "Fail" + " - Reason: %s" % reason[k]+ self.display.SH_DEFAULT
             self.display.out(output)
 
         self.display.info("============================================================")
@@ -1335,6 +1355,9 @@ if __name__ == "__main__":
     )
     arguments.add_argument(
         "--book-info-retry", dest="bookinforetrycnt", type=int, default=1, help="Get book info retry count"
+    )
+    arguments.add_argument(
+        "--verbose", dest="verbose", action='store_true', help="Print book info"
     )
 
     args_parsed = arguments.parse_args()
