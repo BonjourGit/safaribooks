@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Script verifies that:
-# 1. a playlist book (epub file) exists locally
-# 2. the epub file for a book has a newer file create timestamp
-#    than the book's release date
+# 1. a local copy of a playlist book (epub file) exists, i.e. downloaded
+# 2. the local copy has a newer file create timestamp than the book's
+#    release date, as some books can be early releases
 #
 # Argument: playlist id
 #           --verbose (optional)
