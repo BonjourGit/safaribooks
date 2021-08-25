@@ -22,4 +22,5 @@ echo "nohup ./safaribooks.py --book-info-retry 10 --html-retry 10 --playlist ${p
 # Calling this script for all playlists
 # ./safaribooks.py --getplaylists | grep Playlist | cut -d ":" -f2 | xargs -d '\n' -I '{}' ./cmdgen.sh {}
 # append '> filename' to redirect the output to a file
+# ./safaribooks.py --getplaylists | grep Playlist | cut -d ":" -f2 | xargs -d '\n' -I '{}' ./cmdgen.sh {} > tmp/pl
 

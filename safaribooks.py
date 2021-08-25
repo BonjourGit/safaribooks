@@ -7,6 +7,7 @@ import json
 import shutil
 import pathlib
 import getpass
+import glob
 import logging
 import argparse
 import requests
@@ -702,12 +703,23 @@ class SafariBooks:
             self.book_title = self.book_info["title"]
             self.base_url = self.book_info["web_url"]
 
+            self.book_chapters = self.get_book_chapters()
+
             self.clean_book_title = "".join(self.escape_dirname(self.book_title).split(",")[:2]) \
                                     + " ({0})".format(self.book_id)
 
             self.BOOK_PATH = os.path.join(books_dir, self.clean_book_title)
             self.display.set_output_dir(self.BOOK_PATH, self.verbose)
             if os.path.isdir(self.BOOK_PATH):
+                # verify if all chapters were downloaded
+                chapters = os.path.join(self.BOOK_PATH, "OEBPS")
+                chapters_count = len(glob.glob1(chapters, "*.*htm*"))
+                if chapters_count < len(self.book_chapters):
+                    not_verified += 1
+                    info[self.clean_book_title] = False
+                    reason[self.clean_book_title] = "{} Local copy chapter count is less than online version: {} vs. expected {}".format(self.book_id, chapters_count, len(self.book_chapters))
+                    continue
+
                 epub = os.path.join(self.BOOK_PATH, self.book_id + ".epub")
                 if os.path.isfile(epub):
                     epub_ctime = self.get_epub_creation_time(epub)
