@@ -1,6 +1,7 @@
 #!/bin/bash
 
 BOOK="Books/"
+OEBPS="/OEBPS"
 STYLE="/OEBPS/Styles"
 OIFS="$IFS"
 IFS=$'\n'
@@ -17,7 +18,7 @@ for bookdir in `ls ${BOOK}`; do
         exit 1
     fi
     set -x
-    cp -r ${BOOK}${bookdir}${STYLE} ${playlistBookDir}
+    cp -r ${playlistBookDir}${STYLE} ${BOOK}${bookdir}${OEBPS}
     set +x
 done
 IFS="$OIFS"

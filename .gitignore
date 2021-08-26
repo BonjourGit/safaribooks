@@ -5,8 +5,8 @@ __pycache__/
 .venv/
 .env/
 
-Books/
-Playlists/
+Books*/
+Playlists*/
 
 cookies.json
 *.log
