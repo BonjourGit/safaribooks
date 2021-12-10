@@ -752,7 +752,7 @@ class SafariBooks:
             if v is True:
                 output = "%d. " % cnt +"%s: " % k + self.display.SH_BG_GREEN + self.display.SH_BOLD + "Pass" + self.display.SH_DEFAULT
             else:
-                output = "%d. " % cnt + "%s: " % k + self.display.SH_BG_RED + self.display.SH_BOLD + "Fail" + " - Reason: %s" % reason[k]+ self.display.SH_DEFAULT
+                output = "%d. " % cnt + "%s: " % k + self.display.SH_BG_RED + self.display.SH_BOLD + "Fail" + " - Reason: Playlist [%s] Book %s" % (playlist_name,reason[k]) + self.display.SH_DEFAULT
             self.display.out(output)
 
         self.display.info("============================================================")
@@ -1076,9 +1076,18 @@ class SafariBooks:
             self.filename = next_chapter["filename"]
 
             # Images
+            asset_base_url = next_chapter['asset_base_url']
+            api_v2_detected = False
+            if 'v2' in next_chapter['content']:
+                asset_base_url = SAFARI_BASE_URL + "/api/v2/epubs/urn:orm:book:{}/files".format(self.book_id)
+                api_v2_detected = True
+
             if "images" in next_chapter and len(next_chapter["images"]):
-                self.images.extend(urljoin(next_chapter['asset_base_url'], img_url)
-                                   for img_url in next_chapter['images'])
+                for img_url in next_chapter['images']:
+                    if api_v2_detected:
+                        self.images.append(asset_base_url + '/' + img_url)
+                    else:
+                        self.images.append(urljoin(next_chapter['asset_base_url'], img_url))
 
             # Stylesheets
             self.chapter_stylesheets = []
