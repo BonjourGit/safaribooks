@@ -17,7 +17,7 @@ playlistName=${playlistName_// /_}
 
 # Create a command line that downloads the playlist as a background job
 # Copy & paste to use
-echo "nohup ./safaribooks.py --book-info-retry 10 --html-retry 10 --playlist ${playlistId} >> logbook.${playlistName} 2>&1 &"
+echo "nohup ./safaribooks_v3.py --book-info-retry 10 --html-retry 10 --playlist ${playlistId} >> logbook.${playlistName} 2>&1 &"
 
 # Calling this script for all playlists
 # ./safaribooks.py --getplaylists | grep Playlist | cut -d ":" -f2 | xargs -d '\n' -I '{}' ./cmdgen.sh {}
